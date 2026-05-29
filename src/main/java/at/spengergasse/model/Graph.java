@@ -31,4 +31,18 @@ public class Graph {
         }
         return result;
     }
+
+
+//    Hier wird die eingelesene Matrix in ein int Konvertiert
+    public int [][] toMatrixArray(){
+        int n = matrix.size();
+        int[][] result = new int[n][n];
+
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                result[i][j] = matrix.get(i).get(j);
+            }
+        }
+        return result;
+    }
 }

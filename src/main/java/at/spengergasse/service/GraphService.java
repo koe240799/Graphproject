@@ -45,6 +45,8 @@ public class GraphService {
         for (int colIndex = 0; colIndex < parts.length; colIndex++) {
             String token = parts[colIndex].trim();
 
+            token = token.replace("[", ""). replace("]", "").replace(" ", "");
+
             if (token.isEmpty()) {
                 throw new IllegalArgumentException("Leerer Wert in der Zeile: " + rowIndex + "Spalte: " +
                         colIndex + "!");

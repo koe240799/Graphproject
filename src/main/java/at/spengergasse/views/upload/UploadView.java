@@ -11,6 +11,7 @@ import com.vaadin.flow.component.upload.receivers.FileBuffer;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.theme.lumo.LumoUtility.Margin;
 import org.vaadin.lineawesome.LineAwesomeIconUrl;
 
@@ -26,7 +27,7 @@ public class UploadView extends VerticalLayout {
     private final GraphService service = new GraphService();
 
     public UploadView() {
-        
+
             setAlignItems(Alignment.CENTER);
             setJustifyContentMode(JustifyContentMode.CENTER);
 
@@ -51,6 +52,9 @@ public class UploadView extends VerticalLayout {
 
                     Graph graph = service.load(inputStream);
                     showGraph(graph);
+
+//                    Speicherung des Graphen in HTTP-Session des Browsers
+                    VaadinSession.getCurrent().setAttribute("graph", graph);
 
 
                     Notification.show("Graph wurde erfolgreich geladen");

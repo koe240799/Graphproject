@@ -110,9 +110,9 @@ public class MainLayout extends AppLayout {
         return new MenuItemInfo[]{ //
                 new MenuItemInfo("Upload", LineAwesomeIcon.UPLOAD_SOLID.create(), UploadView.class), //
 
-                new MenuItemInfo("Analyzer", LineAwesomeIcon.BRAIN_SOLID.create(), AnalyzerView.class), //
+                new MenuItemInfo("Analyzer", LineAwesomeIcon.CALCULATOR_SOLID.create(), AnalyzerView.class), //
 
-                new MenuItemInfo("Result", LineAwesomeIcon.CALCULATOR_SOLID.create(), ResultView.class), //
+                new MenuItemInfo("Result", LineAwesomeIcon.CHECK_CIRCLE_SOLID.create(), ResultView.class), //
 
         };
     }
