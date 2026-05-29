@@ -29,7 +29,7 @@ public class AnalyzerView extends VerticalLayout {
     public AnalyzerView() {
         setSpacing(true);
         setAlignItems(Alignment.CENTER);
-        setJustifyContentMode(JustifyContentMode.CENTER);
+        setJustifyContentMode(JustifyContentMode.START);
 
         Graph graph = (Graph) VaadinSession.getCurrent().getAttribute("graph");
 
@@ -68,73 +68,97 @@ public class AnalyzerView extends VerticalLayout {
 
         add(new H1("Graph Analyse Ergebnisse"));
 
-        Div table = new Div();
-        table.getStyle()
-                .set("display", "grid")
-                .set("grid-template-columns", "1fr 1fr")
-                .set("gap", "0px")
-                .set("margin-bottom", "20px")
-                .set("width", "300px")
-                .set("border", "1px solid gray")
-                .set("border-radius", "8px")
-                .set("overflow", "hidden")
-                .set("background-color", "black");
-
-        Div header = new Div();
-        header.getStyle()
-                .set("display", "contents");
-
-        Div h1 = new Div(new Text("Knoten"));
-        Div h2 = new Div(new Text("Exzentrizität"));
-
-        h1.getStyle()
-                .set("font-weight", "bold")
-                .set("padding", "6px")
-                .set("background-color", "#333")
-                .set("color", "white")
-                .set("text-align", "center");
-
-        h2.getStyle()
-                .set("font-weight", "bold")
-                .set("padding", "6px")
-                .set("background-color", "#333")
-                .set("color", "white")
-                .set("text-align", "center");
-
-        table.add(h1, h2);
-
-        for (int i = 0; i < ext.length; i++) {
-
-            String nodeLabel = String.valueOf((char) ('A' + i));
-
-            Div c1 = new Div(new Text(nodeLabel));
-            Div c2 = new Div(new Text(String.valueOf(ext[i])));
-
-            c1.getStyle()
-                    .set("padding", "6px")
-                    .set("text-align", "center")
-                    .set("border-top", "1px solid #444");
-
-            c2.getStyle()
-                    .set("padding", "6px")
-                    .set("text-align", "center")
-                    .set("border-top", "1px solid #444");
-
-            table.add(c1, c2);
-        }
-
-        add(table);
-
 
         HorizontalLayout cards = new HorizontalLayout(
+                createExcentricityCard("Exzentrizität", ext),
                 createCard("Radius", radius, ext),
                 createCard("Durchmesser", diameter, ext),
                 createCenterCard("Zentrum", center, ext));
 
         cards.setSpacing(true);
-        cards.setDefaultVerticalComponentAlignment(Alignment.CENTER);
+        cards.setDefaultVerticalComponentAlignment(Alignment.START);
         add(cards);
     }
+
+
+    private Component createExcentricityCard(String title, int[] ext) {
+
+        Div card = new Div();
+        card.getStyle()
+                .set("padding", "20px")
+                .set("border-radius", "12px")
+                .set("box-shadow", "0 2px 10px rgba(0,0,0,0.15)")
+                .set("min-width", "220px")
+                .set("background-color", "black")
+                .set("color", "white")
+                .set("text-align", "center")
+                .set("min-height", "250px")
+                .set("align-content", "center")
+                .set("justify-content", "center");
+
+        H3 h3 = new H3(title);
+
+        Span summary = new Span("Werte");
+        summary.getStyle()
+                .set("font-size", "18px")
+                .set("font-weight", "bold");
+
+        Button toggle = new Button("Details");
+
+        Div details = new Div();
+        details.setVisible(false);
+
+        // Tabelle
+        Div table = new Div();
+        table.getStyle()
+                .set("display", "grid")
+                .set("grid-template-columns", "1fr 1fr")
+                .set("margin-top", "10px")
+                .set("border", "1px solid gray")
+                .set("border-radius", "8px")
+                .set("overflow", "hidden");
+
+        // Header
+        Div h1 = new Div(new Text("Knoten"));
+        Div h2 = new Div(new Text("Exzentrizität"));
+
+        styleHeader(h1);
+        styleHeader(h2);
+
+        table.add(h1, h2);
+
+        // Rows
+        for (int i = 0; i < ext.length; i++) {
+
+            Div c1 = new Div(getNodeLabel(i));
+            Div c2 = new Div(new Text(String.valueOf(ext[i])));
+
+            styleCell(c1);
+            styleCell(c2);
+
+            table.add(c1, c2);
+        }
+
+        details.add(table);
+
+        toggle.addClickListener(e -> {
+            details.setVisible(!details.isVisible());
+            toggle.setText(details.isVisible()
+                    ? "Details verstecken"
+                    : "Details anzeigen");
+        });
+
+        VerticalLayout content = new VerticalLayout();
+        content.setAlignItems(Alignment.CENTER);
+        content.setSpacing(true);
+
+        content.add(summary, toggle, details);
+
+        card.add(h3, content);
+
+        return card;
+    }
+
 
     private Component createCard(String title, int value, int[] ext) {
 
@@ -145,7 +169,10 @@ public class AnalyzerView extends VerticalLayout {
                 .set("box-shadow", "0 2px 10px rgba(0,0,0,0.15)")
                 .set("min-width", "180px")
                 .set("text-align", "center")
-                .set("background-color", "black");
+                .set("background-color", "black")
+                .set("min-height", "250px")
+                .set("align-content", "center")
+                .set("justify-content", "center");
 
         H3 h3 = new H3(title);
         Span span = new Span(String.valueOf(value));
@@ -157,6 +184,10 @@ public class AnalyzerView extends VerticalLayout {
         Button toggle = new Button("Details");
         Div details = new Div();
         details.setVisible(false);
+
+        VerticalLayout content = new VerticalLayout();
+        content.setAlignItems(Alignment.CENTER);
+        content.setSpacing(true);
 
         Div headerRow = new Div();
         headerRow.getStyle()
@@ -183,7 +214,7 @@ public class AnalyzerView extends VerticalLayout {
                     .set("padding", "4px");
 
             row.add(
-                    new Span(String.valueOf(i + 1)),
+                    new Span(getNodeLabel(i)),
                     new Span(String.valueOf(ext[i])));
 
             details.add(row);
@@ -194,7 +225,8 @@ public class AnalyzerView extends VerticalLayout {
             toggle.setText(details.isVisible() ? "Details verstecken" : "Details anzeigen");
         });
 
-        card.add(h3, span, toggle, details);
+        content.add(span, toggle, details);
+        card.add(h3, content);
 
         return card;
     }
@@ -207,16 +239,21 @@ public class AnalyzerView extends VerticalLayout {
                 .set("border-radius", "12px")
                 .set("box-shadow", "0 2px 10px rgba(0,0,0,0.15)")
                 .set("min-width", "220px")
-                .set("text-align", "center")
+                .set("max-width", "300px")
+                .set("width", "100%")
                 .set("background-color", "black")
-                .set("color", "white");
+                .set("color", "white")
+                .set("text-align", "center")
+                .set("overflow-wrap", "break-word")
+                .set("min-height", "250px")
+                .set("align-content", "center")
+                .set("justify-content", "center");
 
         H3 h3 = new H3(title);
 
-        String centerText = center.stream()
-                .map(String::valueOf)
-                .reduce((a, b) -> a + ", " + b)
-                .orElse("");
+        // 🔹 Zentrum schön als Text anzeigen (ohne [])
+        String centerText = "Werte";
+
         Span span = new Span(centerText);
         span.getStyle()
                 .set("font-size", "22px")
@@ -226,6 +263,11 @@ public class AnalyzerView extends VerticalLayout {
 
         Div details = new Div();
         details.setVisible(false);
+
+        // 🔹 Wrapper für sauberes Layout (WICHTIG!)
+        VerticalLayout content = new VerticalLayout();
+        content.setAlignItems(Alignment.CENTER);
+        content.setSpacing(true);
 
         // Header
         Div headerRow = new Div();
@@ -244,7 +286,7 @@ public class AnalyzerView extends VerticalLayout {
 
         details.add(headerRow);
 
-        // Tabelle
+        // Tabelle mit ✔ für Zentrum
         for (int i = 0; i < ext.length; i++) {
 
             Div row = new Div();
@@ -254,27 +296,65 @@ public class AnalyzerView extends VerticalLayout {
                     .set("text-align", "center")
                     .set("padding", "4px");
 
-            String node = String.valueOf(i + 1);
+            String node = getNodeLabel(i);
+            boolean isCenter = center.contains(i);
 
-            String mark = center.contains(i) ? "✔" : "";
+            Span nodeSpan = new Span(node);
+            Span valueSpan = new Span(String.valueOf(ext[i]));
 
-            row.add(
-                    new Span(node + " " + mark),
-                    new Span(String.valueOf(ext[i]))
-            );
+            if (isCenter) {
+                nodeSpan.getStyle()
+                        .set("font-weight", "bold")
+                        .set("color", "lime");
 
+                nodeSpan.setText(node + " ✔");
+            }
+
+            row.add(nodeSpan, valueSpan);
             details.add(row);
         }
 
         toggle.addClickListener(e -> {
             details.setVisible(!details.isVisible());
-            toggle.setText(details.isVisible() ? "Details verstecken" : "Details anzeigen");
+            toggle.setText(details.isVisible()
+                    ? "Details verstecken"
+                    : "Details anzeigen");
         });
 
-        card.add(h3, span, toggle, details);
+        // 🔥 gleiche Struktur wie andere Cards
+        content.add(span, toggle, details);
+
+        card.add(h3, content);
 
         return card;
     }
 
+    private void styleHeader(Div cell) {
+        cell.getStyle()
+                .set("padding", "6px")
+                .set("background-color", "#333")
+                .set("color", "white")
+                .set("font-weight", "bold")
+                .set("text-align", "center");
+    }
+
+    private void styleCell(Div cell) {
+        cell.getStyle()
+                .set("padding", "6px")
+                .set("text-align", "center")
+                .set("border-top", "1px solid #444");
+    }
+
+    private String getNodeLabel(int i) {
+        StringBuilder sb = new StringBuilder();
+        while (i >= 0) {
+            sb.insert(0, (char) ('A' + (i % 26)));
+            i = i / 26 - 1;
+
+        }
+        return sb.toString();
+    }
 }
+
+
 
