@@ -1,9 +1,10 @@
 package at.spengergasse.views;
 
 
+import at.spengergasse.views.bfs.BFSView;
 import at.spengergasse.views.upload.UploadView;
 import at.spengergasse.views.analyzer.AnalyzerView;
-import at.spengergasse.views.result.ResultView;
+import at.spengergasse.views.dijkstra.DijkstraView;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.html.Div;
@@ -85,7 +86,7 @@ public class MainLayout extends AppLayout {
 
 
 
-        H1 appName = new H1("GRAPHCALCULATOR");
+        H1 appName = new H1("GRAPH-CALCULATOR");
 
         layout.add(appName);
 
@@ -112,7 +113,9 @@ public class MainLayout extends AppLayout {
 
                 new MenuItemInfo("Analyzer", LineAwesomeIcon.CALCULATOR_SOLID.create(), AnalyzerView.class), //
 
-                new MenuItemInfo("Result", LineAwesomeIcon.CHECK_CIRCLE_SOLID.create(), ResultView.class), //
+                new MenuItemInfo("Dijkstra", LineAwesomeIcon.CHECK_CIRCLE_SOLID.create(), DijkstraView.class), //
+
+                new MenuItemInfo("BFS", LineAwesomeIcon.CHECK_CIRCLE_SOLID.create(), BFSView.class), //
 
         };
     }
