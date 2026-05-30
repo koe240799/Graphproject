@@ -16,6 +16,8 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinSession;
 import org.vaadin.lineawesome.LineAwesomeIconUrl;
 
+import java.util.List;
+
 @PageTitle("Dijkstra")
 @Route("dijkstra")
 @Menu(order = 2, icon = LineAwesomeIconUrl.BOLT_SOLID)
@@ -24,203 +26,267 @@ public class DijkstraView extends VerticalLayout {
     private final DijkstraService service = new DijkstraService();
     private int[][] matrix;
 
-    private Integer startNode;
-
-    private Div card;
-    private Div graph;
+    private Div content;
+    private int selectedNode = -1;
 
     public DijkstraView() {
-        System.out.println("View constructor called");
+
         setSizeFull();
-        setSpacing(true);
 
-        Graph graphModel =(Graph) VaadinSession.getCurrent().getAttribute("graph");
+        Graph graphModel = (Graph) VaadinSession.getCurrent().getAttribute("graph");
 
-        if(graphModel == null) {
+        if (graphModel == null) {
             add(new H2("Kein Graph geladen! Bitte zuerst Upload durchführen."));
             return;
         }
 
         matrix = graphModel.toMatrixArray();
 
-        card = createResultCard();
-        graph = createGraphContainer();
+        Div card = createCard();
+        Div graph = createGraphContainer();
+
+
+        card.setWidth("320px");
+        card.getStyle().set("flex-shrink", "0");
+        card.setWidth("320px");
+        card.getStyle().set("flex-shrink", "0");
+        graph.setSizeFull();
 
         HorizontalLayout layout = new HorizontalLayout(card, graph);
+        layout.setSizeFull();
+
         layout.setFlexGrow(1, graph);
         layout.setFlexGrow(0, card);
+
         add(layout);
 
-        UI.getCurrent().beforeClientResponse(this, ctx -> initGraph());
+        addAttachListener(e -> initGraph(graph));
     }
 
-    private void initGraph() {
+    // ================= GRAPH INIT =================
+
+    private void initGraph(Div graphContainer) {
 
         String nodes = GraphDataMapper.buildNodes(matrix.length);
         String edges = GraphDataMapper.buildEdges(matrix);
 
-        getUI().ifPresent(ui -> {
+        UI.getCurrent().getPage().addJavaScript(
+                "https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"
+        );
 
-            ui.getPage().addJavaScript("https://unpkg.com/vis-network/standalone/umd/vis-network.min.js");
+        UI.getCurrent().getPage().executeJs("""
+            const container = $0;
 
-            ui.getPage().executeJs(
-                    """
-                    const container = $0;
-            
-                    function start() {
-            
-                        if (!window.vis || !window.vis.Network) {
-                            console.log("vis not ready");
-                            return;
-                        }
-            
-                        if (window.network) {
-                            return; // verhindert doppeltes initialisieren
-                        }
-            
-                        // Wir speichern die ursprünglichen Daten, um die Farben später zurücksetzen zu können
-                        const rawNodes = JSON.parse($1);
-                        window.nodes = new vis.DataSet(rawNodes);
-                        window.edges = new vis.DataSet(JSON.parse($2));
-            
-                        window.network = new vis.Network(container, {
-                            nodes: window.nodes,
-                            edges: window.edges
-                        }, {
-                            physics: true
-                        });
-            
-                        window.network.on("click", (params) => {
-                            if (params.nodes.length > 0) {
-                                const selectedNodeId = params.nodes[0];
-            
-                                // 1. Alle Knoten auf ihre ursprüngliche Farbe zurücksetzen
-                                rawNodes.forEach(originalNode => {
-                                    window.nodes.update({
-                                        id: originalNode.id,
-                                        color: originalNode.color || null // Falls vorher keine Farbe definiert war, auf Default zurücksetzen
-                                    });
-                                });
-            
-                                // 2. Den ausgewählten Knoten rot färben
-                                window.nodes.update({
-                                    id: selectedNodeId,
-                                    color: {
-                                        background: '#ff0000',
-                                        border: '#cc0000',
-                                        highlight: {
-                                            background: '#ff0000',
-                                            border: '#cc0000'
-                                        }
-                                    }
-                                });
-            
-                                // Server-Callback aufrufen
-                                $3.$server.nodeSelected(selectedNodeId);
-                            } else {
-                                // Klick ins Leere: Alle Knoten wieder in den Originalzustand versetzen
-                                rawNodes.forEach(originalNode => {
-                                    window.nodes.update({
-                                        id: originalNode.id,
-                                        color: originalNode.color || null
-                                    });
-                                });
-                            }
-                        });
+            function start() {
+
+                if (!window.vis || !window.vis.Network) return;
+                if (window.network) return;
+
+                const rawNodes = JSON.parse($1);
+
+                window.nodes = new vis.DataSet(rawNodes);
+                window.edges = new vis.DataSet(JSON.parse($2));
+
+                window.network = new vis.Network(container, {
+                    nodes: window.nodes,
+                    edges: window.edges
+                }, {
+                    physics: true
+                });
+
+                window.network.on("click", (params) => {
+                    if (params.nodes.length > 0) {
+                        const id = params.nodes[0];
+                        $3.$server.nodeSelected(id);
                     }
-            
-                    const interval = setInterval(() => {
-                        if (window.vis && window.vis.Network) {
-                            clearInterval(interval);
-                            start();
-                        }
-                    }, 50);
-                    """,
-                    graph.getElement(),
-                    nodes,
-                    edges,
-                    getElement()
-            );
-        });
+                });
+            }
+
+            const interval = setInterval(() => {
+                if (window.vis && window.vis.Network) {
+                    clearInterval(interval);
+                    start();
+                }
+            }, 50);
+        """,
+                graphContainer.getElement(),
+                nodes,
+                edges,
+                getElement());
     }
 
-    private Div createGraphContainer() {
-        Div graph = new Div();
-        graph.setWidth("100%");
-        graph.setHeight("500px");
-        graph.getStyle().set("border", "1px solid #ccc");
-        return graph;
-    }
-
-    private Div createResultCard() {
-        Div card = new Div();
-        card.getStyle()
-                .set("width", "300px")
-                .set("padding", "20px")
-                .set("background", "#111")
-                .set("color", "white")
-                .set("border-radius", "12px");
-
-        card.add(new H2("Dijkstra"));
-        card.add(new Div("Startkonoten im Graph auswählen!"));
-        return card;
-    }
+    // ================= SERVER CALL =================
 
     @ClientCallable
     public void nodeSelected(int nodeId) {
 
-        startNode = nodeId;
+        selectedNode = nodeId;
 
         DijkstraResult result = service.dijkstra(matrix, nodeId);
 
-        updateCard(result.getDistances());
-
-        getUI().ifPresent(ui -> ui.getPage().executeJs(
-                """
-                if (!window.nodes) {
-                    console.log("nodes not ready");
-                    return;
-                }
-        
-                // reset alle
-                window.nodes.get().forEach(n => {
-                    window.nodes.update({
-                        id: n.id,
-                        color: {
-                            background: '#97C2FC'
-                        }
-                    });
-                });
-        
-                // 🔴 markiere aktuellen
-                window.nodes.update({
-                    id: $0,
-                    color: {
-                        background: 'red',
-                        border: 'darkred'
-                    }
-                });
-        
-                """,
-                nodeId
-        ));
+        getUI().ifPresent(ui ->
+                ui.access(() -> updateCard(result))
+        );
     }
 
-    private void updateCard(int[] dist) {
-        card.removeAll();
-        card.add(new H2("Dijkstra"));
+    // ================= UI OUTPUT =================
+
+    private void updateCard(DijkstraResult result) {
+
+        if (content == null) return;
+
+        content.removeAll();
+
+        int[] dist = result.getDistances();
+        int[] prev = result.getPrevious();
+
+        // ================= HEADER =================
+        Div header = new Div();
+
+        header.getStyle()
+                .set("display", "grid")
+                .set("grid-template-columns", "1fr 1fr 1fr")
+                .set("width", "100%")
+                .set("justify-items", "center")
+                .set("align-items", "center")
+                .set("font-weight", "bold");
+
+        header.add(
+                new Div("Knoten"),
+                new Div("Vorgänger"),
+                new Div("Distanz")
+        );
+
+        content.add(header);
+
+        // ================= TABLE ROWS =================
+        for (int i = 0; i < dist.length; i++) {
+
+            String node = getLabel(i);
+
+            String predecessor = (prev[i] == -1)
+                    ? "–"
+                    : getLabel(prev[i]);
+
+            String distance = (dist[i] == Integer.MAX_VALUE)
+                    ? "∞"
+                    : String.valueOf(dist[i]);
+
+            Div row = new Div();
+
+            row.getStyle()
+                    .set("display", "grid")
+                    .set("grid-template-columns", "1fr 1fr 1fr")
+                    .set("text-align", "center")
+                    .set("width", "100%")
+                    .set("font-family", "monospace")
+                    .set("padding", "2px 0");
+
+            row.add(
+                    new Div(node),
+                    new Div(predecessor),
+                    new Div(distance)
+            );
+
+            content.add(row);
+        }
+
+        // ================= PATHS =================
+        content.add(new Div(" "));
+
+        Div title = new Div("=== Alle kürzesten Pfade vom Startknoten ===");
+        title.getStyle()
+                .set("text-align", "center")
+                .set("font-weight", "bold")
+                .set("margin-top", "10px");
+
+        content.add(title);
+
+        content.add(new Div(" "));
 
         for (int i = 0; i < dist.length; i++) {
-            card.add(new Div("Node " + i + ": " + dist[i]));
+
+            String path = buildPath(result, i);
+
+            String distance = (dist[i] == Integer.MAX_VALUE)
+                    ? "∞"
+                    : String.valueOf(dist[i]);
+
+            Div pathRow = new Div(getLabel(i) + ": " + path + "   (Distanz: " + distance + ")");
+
+            pathRow.getStyle()
+                    .set("text-align", "center")
+                    .set("width", "100%")
+                    .set("font-family", "monospace");
+
+            content.add(pathRow);
         }
     }
 
-    private String getLabel(int i) {
+    // ================= PATH =================
+
+    private String buildPath(DijkstraResult result, int target) {
+
+        List<Integer> path = result.getPathTo(target);
+
         StringBuilder sb = new StringBuilder();
+
+        for (int i = 0; i < path.size(); i++) {
+
+            if (i > 0) {
+                sb.append(" → ");
+            }
+
+            sb.append(getLabel(path.get(i)));
+        }
+
+        return sb.toString();
+    }
+
+    // ================= UI HELPERS =================
+
+    private Div createCard() {
+
+        Div card = new Div();
+
+        card.getStyle()
+                .set("width", "100%")
+                .set("padding", "16px")
+                .set("background", "#111")
+                .set("color", "white")
+                .set("border-radius", "12px");
+
+        content = new Div();
+
+        card.add(
+                new Div("Dijkstra"),
+                new Div("👉 Knoten auswählen"),
+                content
+        );
+
+        return card;
+    }
+
+    private Div createGraphContainer() {
+
+        Div graph = new Div();
+        graph.setWidth("100%");
+        graph.setHeight("500px");
+
+        graph.getStyle().set("border", "1px solid #ccc");
+
+        return graph;
+    }
+
+    private String getLabel(int i) {
+
+        StringBuilder sb = new StringBuilder();
+
         while (i >= 0) {
             sb.insert(0, (char) ('A' + (i % 26)));
             i = i / 26 - 1;
         }
+
         return sb.toString();
     }
 }
