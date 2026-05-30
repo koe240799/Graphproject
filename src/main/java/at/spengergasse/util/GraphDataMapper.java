@@ -27,6 +27,7 @@ public class GraphDataMapper {
                     first = false;
 
                     sb.append("{")
+                            .append("\"id\":\"").append(i).append("-").append(j).append("\",")
                             .append("\"from\":").append(i).append(",")
                             .append("\"to\":").append(j).append(",")
                             .append("\"label\":\"").append(matrix[i][j]).append("\"")
