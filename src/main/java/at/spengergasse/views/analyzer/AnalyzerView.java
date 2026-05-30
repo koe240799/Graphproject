@@ -34,7 +34,7 @@ public class AnalyzerView extends VerticalLayout {
         Graph graph = (Graph) VaadinSession.getCurrent().getAttribute("graph");
 
         if (graph == null) {
-            H2 message = new H2(" Kein Graph vorhanden! Bitte zuerst Upload durchfüren.");
+            H2 message = new H2(" Kein Graph vorhanden! Bitte zuerst Upload durchführen.");
 
 
             Button uploadButton = new Button("Zum Upload", e ->

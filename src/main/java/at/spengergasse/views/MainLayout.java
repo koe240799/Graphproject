@@ -2,6 +2,7 @@ package at.spengergasse.views;
 
 
 import at.spengergasse.views.bfs.BFSView;
+import at.spengergasse.views.euler.EulerView;
 import at.spengergasse.views.upload.UploadView;
 import at.spengergasse.views.analyzer.AnalyzerView;
 import at.spengergasse.views.dijkstra.DijkstraView;
@@ -116,6 +117,8 @@ public class MainLayout extends AppLayout {
                 new MenuItemInfo("Dijkstra", LineAwesomeIcon.CHECK_CIRCLE_SOLID.create(), DijkstraView.class), //
 
                 new MenuItemInfo("BFS", LineAwesomeIcon.CHECK_CIRCLE_SOLID.create(), BFSView.class), //
+
+                new MenuItemInfo("Euler", LineAwesomeIcon.CHECK_CIRCLE_SOLID.create(), EulerView.class), //
 
         };
     }

@@ -11,6 +11,7 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.Menu;
@@ -31,6 +32,9 @@ public class BFSView extends VerticalLayout {
     private int startNode = -1;
 
     public BFSView() {
+        setSpacing(true);
+        setAlignItems(Alignment.CENTER);
+        setJustifyContentMode(JustifyContentMode.START);
 
         setSizeFull();
 
@@ -43,7 +47,10 @@ public class BFSView extends VerticalLayout {
             Button uploadButton = new Button("Zum Upload",
                     e -> UI.getCurrent().navigate(UploadView.class));
 
-            add(new HorizontalLayout(message, uploadButton));
+            HorizontalLayout header = new HorizontalLayout(message, uploadButton);
+            header.setDefaultVerticalComponentAlignment(Alignment.CENTER);
+            
+            add(header);
             return;
         }
 
@@ -170,15 +177,15 @@ public class BFSView extends VerticalLayout {
         Div processed = new Div("Verarbeitet");
 
         schritt.getStyle()
-                .set("padding", "12px")
+                .set("padding", "15px")
                 .set("text-align", "center");
 
         discovered.getStyle()
-                .set("padding", "12px")
+                .set("padding", "15px")
                 .set("text-align", "center");
 
         processed.getStyle()
-                .set("padding", "12px")
+                .set("padding", "15px")
                 .set("text-align", "center");
 
         header.add(schritt, discovered, processed);
@@ -192,10 +199,11 @@ public class BFSView extends VerticalLayout {
             row.getStyle()
                     .set("display", "grid")
                     .set("grid-template-columns", "80px 1fr 1fr")
+                    .set("column-gap", "20px")
                     .set("width", "100%")
                     .set("text-align", "center")
                     .set("font-family", "monospace")
-                    .set("padding", "6px 0")
+                    .set("padding", "10px 0")
                     .set("border-bottom", "1px solid #eee");
 
             row.add(
@@ -208,7 +216,7 @@ public class BFSView extends VerticalLayout {
             content.getStyle()
                     .set("display", "flex")
                     .set("flex-direction", "column")
-                    .set("gap", "4px");
+                    .set("gap", "15px");
         }
     }
 
@@ -222,11 +230,15 @@ public class BFSView extends VerticalLayout {
                 .set("padding", "16px")
                 .set("background", "#111")
                 .set("color", "white")
-                .set("border-radius", "12px");
+                .set("border-radius", "6px");
 
         content = new Div();
 
-        card.add(new Div("BFS"), content);
+        card.add(
+                new H2("BFS"),
+                new Div("👉 Knoten auswählen"),
+                content
+        );
 
         return card;
     }

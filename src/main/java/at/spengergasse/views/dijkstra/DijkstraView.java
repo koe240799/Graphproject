@@ -41,7 +41,7 @@ public class DijkstraView extends VerticalLayout {
         Graph graphModel = (Graph) VaadinSession.getCurrent().getAttribute("graph");
 
         if (graphModel == null) {
-            H2 message = new H2(" Kein Graph vorhanden! Bitte zuerst Upload durchfüren.");
+            H2 message = new H2(" Kein Graph vorhanden! Bitte zuerst Upload durchführen.");
 
             Button uploadButton = new Button("Zum Upload", e ->
                     UI.getCurrent().navigate(UploadView.class));
@@ -281,7 +281,7 @@ public class DijkstraView extends VerticalLayout {
         content = new Div();
 
         card.add(
-                new Div("Dijkstra"),
+                new H2("Dijkstra"),
                 new Div("👉 Knoten auswählen"),
                 content
         );
