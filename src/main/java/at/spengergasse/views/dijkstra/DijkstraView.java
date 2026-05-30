@@ -4,8 +4,10 @@ import at.spengergasse.model.Graph;
 import at.spengergasse.service.DijkstraResult;
 import at.spengergasse.service.DijkstraService;
 import at.spengergasse.util.GraphDataMapper;
+import at.spengergasse.views.upload.UploadView;
 import com.vaadin.flow.component.ClientCallable;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -30,13 +32,23 @@ public class DijkstraView extends VerticalLayout {
     private int selectedNode = -1;
 
     public DijkstraView() {
+        setSpacing(true);
+        setAlignItems(Alignment.CENTER);
+        setJustifyContentMode(JustifyContentMode.START);
 
         setSizeFull();
 
         Graph graphModel = (Graph) VaadinSession.getCurrent().getAttribute("graph");
 
         if (graphModel == null) {
-            add(new H2("Kein Graph geladen! Bitte zuerst Upload durchführen."));
+            H2 message = new H2(" Kein Graph vorhanden! Bitte zuerst Upload durchfüren.");
+
+            Button uploadButton = new Button("Zum Upload", e ->
+                    UI.getCurrent().navigate(UploadView.class));
+
+            HorizontalLayout header = new HorizontalLayout(message, uploadButton);
+            header.setDefaultVerticalComponentAlignment(Alignment.CENTER);
+            add(header);
             return;
         }
 
@@ -48,12 +60,11 @@ public class DijkstraView extends VerticalLayout {
 
         card.setWidth("320px");
         card.getStyle().set("flex-shrink", "0");
-        card.setWidth("320px");
-        card.getStyle().set("flex-shrink", "0");
-        graph.setSizeFull();
 
         HorizontalLayout layout = new HorizontalLayout(card, graph);
         layout.setSizeFull();
+
+        layout.setAlignItems(Alignment.START);
 
         layout.setFlexGrow(1, graph);
         layout.setFlexGrow(0, card);
