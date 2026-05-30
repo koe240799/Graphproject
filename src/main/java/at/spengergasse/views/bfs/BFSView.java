@@ -1,37 +1,269 @@
 package at.spengergasse.views.bfs;
 
+import at.spengergasse.model.Graph;
+import at.spengergasse.service.BFSResult;
+import at.spengergasse.service.BFSService;
+import at.spengergasse.service.BFSStep;
+import at.spengergasse.util.GraphDataMapper;
+import at.spengergasse.views.upload.UploadView;
+import com.vaadin.flow.component.ClientCallable;
+import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
-import com.vaadin.flow.component.html.Image;
-import com.vaadin.flow.component.html.Paragraph;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.theme.lumo.LumoUtility;
+import com.vaadin.flow.server.VaadinSession;
 import org.vaadin.lineawesome.LineAwesomeIconUrl;
-
 
 @PageTitle("BFS")
 @Route("bfs")
 @Menu(order = 2, icon = LineAwesomeIconUrl.BOLT_SOLID)
 public class BFSView extends VerticalLayout {
 
+    private final BFSService service = new BFSService();
+    private int[][] matrix;
+
+    private Div content;
+    private int startNode = -1;
+
     public BFSView() {
-        setSpacing(false);
-
-        Image img = new Image("images/empty-plant.png", "placeholder plant");
-        img.setWidth("200px");
-        add(img);
-
-        H2 header = new H2("This place intentionally left empty");
-        header.addClassNames(LumoUtility.Margin.Top.XLARGE, LumoUtility.Margin.Bottom.MEDIUM);
-        add(header);
-        add(new Paragraph("It’s a place where you can grow your own UI 🤗"));
 
         setSizeFull();
-        setJustifyContentMode(JustifyContentMode.CENTER);
-        setDefaultHorizontalComponentAlignment(Alignment.CENTER);
-        getStyle().set("text-align", "center");
+
+        Graph graphModel = (Graph) VaadinSession.getCurrent().getAttribute("graph");
+
+        if (graphModel == null) {
+
+            H2 message = new H2("Kein Graph vorhanden! Bitte zuerst Upload durchführen.");
+
+            Button uploadButton = new Button("Zum Upload",
+                    e -> UI.getCurrent().navigate(UploadView.class));
+
+            add(new HorizontalLayout(message, uploadButton));
+            return;
+        }
+
+        matrix = graphModel.toMatrixArray();
+
+        Div card = createCard();
+        Div graph = createGraphContainer();
+
+        card.setWidth("320px");
+
+        HorizontalLayout layout = new HorizontalLayout(card, graph);
+        layout.setSizeFull();
+        layout.setAlignItems(Alignment.START);
+
+        layout.setFlexGrow(0, card);
+        layout.setFlexGrow(1, graph);
+
+        add(layout);
+
+        addAttachListener(e -> initGraph(graph));
     }
 
+    // ================= GRAPH =================
+
+    private void initGraph(Div graphContainer) {
+
+        String nodes = GraphDataMapper.buildNodes(matrix.length);
+        String edges = GraphDataMapper.buildEdges(matrix);
+
+        getUI().ifPresent(ui -> {
+
+            ui.getPage().addJavaScript(
+                    "https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"
+            );
+
+            ui.getPage().executeJs("""
+                const container = $0;
+
+                function start() {
+
+                    if (!window.vis || !window.vis.Network) return;
+                    if (window.network) return;
+
+                    const rawNodes = JSON.parse($1);
+
+                    window.nodes = new vis.DataSet(rawNodes);
+                    window.edges = new vis.DataSet(JSON.parse($2));
+
+                    window.network = new vis.Network(container, {
+                        nodes: window.nodes,
+                        edges: window.edges
+                    }, {
+                        physics: true
+                    });
+
+                    window.network.on("click", (params) => {
+                        if (params.nodes.length > 0) {
+                            const id = params.nodes[0];
+                            $3.$server.nodeSelected(id);
+                        }
+                    });
+                }
+
+                const interval = setInterval(() => {
+                    if (window.vis && window.vis.Network) {
+                        clearInterval(interval);
+                        start();
+                    }
+                }, 50);
+            """,
+                    graphContainer.getElement(),
+                    nodes,
+                    edges,
+                    getElement());
+        });
+    }
+
+    // ================= CLICK =================
+
+    @ClientCallable
+    public void nodeSelected(int nodeId) {
+
+        startNode = nodeId;
+
+        BFSResult result = service.bfs(matrix, nodeId);
+
+        getUI().ifPresent(ui ->
+                ui.access(() -> updateCard(result))
+        );
+    }
+
+    // ================= OUTPUT (Dijkstra Style) =================
+
+    private void updateCard(BFSResult result) {
+
+        content.removeAll();
+
+        // ================= START =================
+        Div start = new Div("Startknoten: " + getLabel(startNode));
+        start.getStyle()
+                .set("text-align", "center")
+                .set("font-weight", "bold")
+                .set("font-size", "16px")
+                .set("margin-bottom", "12px")
+                .set("color", "#00aaff");
+
+        content.add(start);
+
+        // ================= HEADER =================
+
+        Div header = new Div();
+
+        header.getStyle()
+                .set("display", "grid")
+                .set("grid-template-columns", "80px 1fr 1fr")
+                .set("width", "100%")
+                .set("background", "#222")
+                .set("color", "white")
+                .set("border-radius", "6px")
+                .set("margin-bottom", "6px");
+
+        Div schritt = new Div("Schritt");
+        Div discovered = new Div("Entdeckt");
+        Div processed = new Div("Verarbeitet");
+
+        schritt.getStyle()
+                .set("padding", "12px")
+                .set("text-align", "center");
+
+        discovered.getStyle()
+                .set("padding", "12px")
+                .set("text-align", "center");
+
+        processed.getStyle()
+                .set("padding", "12px")
+                .set("text-align", "center");
+
+        header.add(schritt, discovered, processed);
+
+        content.add(header);
+        // ================= ROWS =================
+        for (BFSStep step : result.getSteps()) {
+
+            Div row = new Div();
+
+            row.getStyle()
+                    .set("display", "grid")
+                    .set("grid-template-columns", "80px 1fr 1fr")
+                    .set("width", "100%")
+                    .set("text-align", "center")
+                    .set("font-family", "monospace")
+                    .set("padding", "6px 0")
+                    .set("border-bottom", "1px solid #eee");
+
+            row.add(
+                    new Div(String.valueOf(step.getStep())),
+                    new Div(format(step.getDiscovered())),
+                    new Div(format(step.getProcessed()))
+            );
+
+            content.add(row);
+            content.getStyle()
+                    .set("display", "flex")
+                    .set("flex-direction", "column")
+                    .set("gap", "4px");
+        }
+    }
+
+    // ================= UI =================
+
+    private Div createCard() {
+
+        Div card = new Div();
+
+        card.getStyle()
+                .set("padding", "16px")
+                .set("background", "#111")
+                .set("color", "white")
+                .set("border-radius", "12px");
+
+        content = new Div();
+
+        card.add(new Div("BFS"), content);
+
+        return card;
+    }
+
+    private Div createGraphContainer() {
+
+        Div graph = new Div();
+        graph.setWidth("100%");
+        graph.setHeight("500px");
+        graph.getStyle().set("border", "1px solid #ccc");
+
+        return graph;
+    }
+
+    // ================= HELPERS =================
+
+    private String format(java.util.List<Integer> nodes) {
+
+        if (nodes == null || nodes.isEmpty()) {
+            return "-";
+        }
+
+        return nodes.stream()
+                .map(this::getLabel)
+                .reduce((a, b) -> a + " · " + b)
+                .orElse("-");
+    }
+
+    private String getLabel(int i) {
+
+        StringBuilder sb = new StringBuilder();
+
+        while (i >= 0) {
+            sb.insert(0, (char) ('A' + (i % 26)));
+            i = i / 26 - 1;
+        }
+
+        return sb.toString();
+    }
 }

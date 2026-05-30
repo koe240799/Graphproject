@@ -202,10 +202,21 @@ public class DijkstraView extends VerticalLayout {
             content.add(row);
         }
 
+        Div start = new Div("Startknoten: " + getLabel(selectedNode));
+
+        start.getStyle()
+                .set("text-align", "center")
+                .set("font-weight", "bold")
+                .set("font-size", "16px")
+                .set("margin-bottom", "12px")
+                .set("color", "#00aaff");
+
+        content.add(start);
+
         // ================= PATHS =================
         content.add(new Div(" "));
 
-        Div title = new Div("=== Alle kürzesten Pfade vom Startknoten ===");
+        Div title = new Div("Alle kürzesten Pfade vom Startknoten");
         title.getStyle()
                 .set("text-align", "center")
                 .set("font-weight", "bold")
