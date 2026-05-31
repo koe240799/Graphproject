@@ -71,8 +71,27 @@ public class DijkstraView extends VerticalLayout {
 
         add(layout);
 
-        addAttachListener(e -> initGraph(graph));
+        getElement().executeJs("""
+            setTimeout(() => $0.$server.initGraphClientSide(), 100);
+        """, getElement());
     }
+
+    @ClientCallable
+    public void initGraphClientSide() {
+
+        Div graphContainer = (Div) getChildren()
+                .filter(c -> c instanceof HorizontalLayout)
+                .findFirst()
+                .get()
+                .getElement()
+                .getChild(1)
+                .getComponent()
+                .get();
+
+        initGraph(graphContainer);
+    }
+
+
 
     // ================= GRAPH INIT =================
 
@@ -81,16 +100,21 @@ public class DijkstraView extends VerticalLayout {
         String nodes = GraphDataMapper.buildNodes(matrix.length);
         String edges = GraphDataMapper.buildEdges(matrix);
 
-        UI.getCurrent().getPage().addJavaScript(
-                "https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"
-        );
+        UI.getCurrent().getPage().executeJs("""
+            if (!window.visLoaded) {
+                let script = document.createElement('script');
+                script.src = "https://unpkg.com/vis-network/standalone/umd/vis-network.min.js";
+                script.onload = () => window.visLoaded = true;
+                document.head.appendChild(script);
+            }
+        """);
 
         UI.getCurrent().getPage().executeJs("""
             const container = $0;
 
             function start() {
 
-                if (!window.vis || !window.vis.Network) return;
+               if (!window.visLoaded || !window.vis || !window.vis.Network) return;
                 if (window.network) return;
 
                 const rawNodes = JSON.parse($1);
@@ -114,9 +138,9 @@ public class DijkstraView extends VerticalLayout {
             }
 
             const interval = setInterval(() => {
-                if (window.vis && window.vis.Network) {
-                    clearInterval(interval);
-                    start();
+                 if (window.visLoaded && window.vis && window.vis.Network) {
+                     clearInterval(interval);
+                     setTimeout(start, 50);
                 }
             }, 50);
         """,

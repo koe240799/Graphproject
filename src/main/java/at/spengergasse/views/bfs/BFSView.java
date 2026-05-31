@@ -70,7 +70,24 @@ public class BFSView extends VerticalLayout {
 
         add(layout);
 
-        addAttachListener(e -> initGraph(graph));
+        getElement().executeJs("""
+            setTimeout(() => $0.$server.initGraphClientSide(), 100);
+        """, getElement());
+    }
+
+    @ClientCallable
+    public void initGraphClientSide() {
+
+        Div graphContainer = (Div) getChildren()
+                .filter(c -> c instanceof HorizontalLayout)
+                .findFirst()
+                .get()
+                .getElement()
+                .getChild(1)
+                .getComponent()
+                .get();
+
+        initGraph(graphContainer);
     }
 
     // ================= GRAPH =================
@@ -82,16 +99,21 @@ public class BFSView extends VerticalLayout {
 
         getUI().ifPresent(ui -> {
 
-            ui.getPage().addJavaScript(
-                    "https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"
-            );
+            ui.getPage().executeJs("""
+                if (!window.visLoaded) {
+                    let script = document.createElement('script');
+                    script.src = "https://unpkg.com/vis-network/standalone/umd/vis-network.min.js";
+                    script.onload = () => window.visLoaded = true;
+                    document.head.appendChild(script);
+                }
+            """);
 
             ui.getPage().executeJs("""
                 const container = $0;
 
                 function start() {
 
-                    if (!window.vis || !window.vis.Network) return;
+                      if (!window.visLoaded || !window.vis || !window.vis.Network) return;
                     if (window.network) return;
 
                     const rawNodes = JSON.parse($1);
@@ -115,9 +137,9 @@ public class BFSView extends VerticalLayout {
                 }
 
                 const interval = setInterval(() => {
-                    if (window.vis && window.vis.Network) {
+                    if (window.visLoaded && window.vis && window.vis.Network) {
                         clearInterval(interval);
-                        start();
+                        setTimeout(start, 50);
                     }
                 }, 50);
             """,
