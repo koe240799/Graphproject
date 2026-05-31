@@ -5,6 +5,7 @@ import at.spengergasse.service.BFSResult;
 import at.spengergasse.service.BFSService;
 import at.spengergasse.service.BFSStep;
 import at.spengergasse.util.GraphDataMapper;
+import at.spengergasse.util.GraphVisualAdapter;
 import at.spengergasse.views.upload.UploadView;
 import com.vaadin.flow.component.ClientCallable;
 import com.vaadin.flow.component.UI;
@@ -19,6 +20,10 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinSession;
 import org.vaadin.lineawesome.LineAwesomeIconUrl;
+import tools.jackson.databind.ObjectMapper;
+
+import java.util.List;
+import java.util.Map;
 
 @PageTitle("BFS")
 @Route("bfs")
@@ -94,61 +99,75 @@ public class BFSView extends VerticalLayout {
 
     private void initGraph(Div graphContainer) {
 
-        String nodes = GraphDataMapper.buildNodes(matrix.length);
-        String edges = GraphDataMapper.buildEdges(matrix);
+            List<int[]> edgesList = GraphVisualAdapter.toEdges(matrix);
 
-        getUI().ifPresent(ui -> {
+            String nodes = GraphDataMapper.buildNodes(matrix.length);
 
-            ui.getPage().executeJs("""
-                if (!window.visLoaded) {
-                    let script = document.createElement('script');
-                    script.src = "https://unpkg.com/vis-network/standalone/umd/vis-network.min.js";
-                    script.onload = () => window.visLoaded = true;
-                    document.head.appendChild(script);
-                }
-            """);
+            String edges;
 
-            ui.getPage().executeJs("""
-                const container = $0;
+            try {
+                edges = new ObjectMapper().writeValueAsString(
+                        edgesList.stream()
+                                .map(e -> Map.of("from", e[0], "to", e[1]))
+                                .toList()
+                );
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
 
-                function start() {
+            getUI().ifPresent(ui -> {
 
-                      if (!window.visLoaded || !window.vis || !window.vis.Network) return;
-                    if (window.network) return;
+                ui.getPage().executeJs("""
+                            if (!window.visLoaded) {
+                                let script = document.createElement('script');
+                                script.src = "https://unpkg.com/vis-network/standalone/umd/vis-network.min.js";
+                                script.onload = () => window.visLoaded = true;
+                                document.head.appendChild(script);
+                            }
+                        """);
 
-                    const rawNodes = JSON.parse($1);
-
-                    window.nodes = new vis.DataSet(rawNodes);
-                    window.edges = new vis.DataSet(JSON.parse($2));
-
-                    window.network = new vis.Network(container, {
-                        nodes: window.nodes,
-                        edges: window.edges
-                    }, {
-                        physics: true
-                    });
-
-                    window.network.on("click", (params) => {
-                        if (params.nodes.length > 0) {
-                            const id = params.nodes[0];
-                            $3.$server.nodeSelected(id);
-                        }
-                    });
-                }
-
-                const interval = setInterval(() => {
-                    if (window.visLoaded && window.vis && window.vis.Network) {
-                        clearInterval(interval);
-                        setTimeout(start, 50);
-                    }
-                }, 50);
-            """,
-                    graphContainer.getElement(),
-                    nodes,
-                    edges,
-                    getElement());
-        });
-    }
+                ui.getPage().executeJs("""
+                                    const container = $0;
+                                
+                                    function start() {
+                                
+                                          if (!window.visLoaded || !window.vis || !window.vis.Network) return;
+                                        if (window.network) return;
+                                
+                                        const rawNodes = JSON.parse($1);
+                                
+                                        window.nodes = new vis.DataSet(rawNodes);
+                                        window.edges = new vis.DataSet(JSON.parse($2));
+                                
+                                        window.network = new vis.Network(container, {
+                                            nodes: window.nodes,
+                                            edges: window.edges
+                                        }, {
+                                            physics: true
+                                        });
+                                
+                                        window.network.on("click", (params) => {
+                                            if (params.nodes.length > 0) {
+                                                const id = params.nodes[0];
+                                                $3.$server.nodeSelected(id);
+                                            }
+                                        });
+                                    }
+                                
+                                    const interval = setInterval(() => {
+                                        if (window.visLoaded && window.vis && window.vis.Network) {
+                                            clearInterval(interval);
+                                            setTimeout(start, 80);
+                                        }
+                                    }, 50);
+                                """,
+                        graphContainer.getElement(),
+                        nodes,
+                        edges,
+                        getElement());
+            });
+        }
+    
 
     // ================= CLICK =================
 

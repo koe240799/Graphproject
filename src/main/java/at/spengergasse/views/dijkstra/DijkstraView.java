@@ -4,6 +4,7 @@ import at.spengergasse.model.Graph;
 import at.spengergasse.service.DijkstraResult;
 import at.spengergasse.service.DijkstraService;
 import at.spengergasse.util.GraphDataMapper;
+import at.spengergasse.util.GraphVisualAdapter;
 import at.spengergasse.views.upload.UploadView;
 import com.vaadin.flow.component.ClientCallable;
 import com.vaadin.flow.component.UI;
@@ -17,8 +18,11 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinSession;
 import org.vaadin.lineawesome.LineAwesomeIconUrl;
+import tools.jackson.databind.ObjectMapper;
+
 
 import java.util.List;
+import java.util.Map;
 
 @PageTitle("Dijkstra")
 @Route("dijkstra")
@@ -28,80 +32,159 @@ public class DijkstraView extends VerticalLayout {
     private final DijkstraService service = new DijkstraService();
     private int[][] matrix;
 
-    private Div content;
+    private Div tableContent;   // ⭐ LINKS (nur Tabelle)
+    private Div pathContent;    // ⭐ RECHTS UNTEN (Pfade)
+    private Div graphContainer;
+
     private int selectedNode = -1;
 
     public DijkstraView() {
+
         setSpacing(true);
         setAlignItems(Alignment.CENTER);
         setJustifyContentMode(JustifyContentMode.START);
 
         setSizeFull();
 
+
         Graph graphModel = (Graph) VaadinSession.getCurrent().getAttribute("graph");
 
         if (graphModel == null) {
-            H2 message = new H2(" Kein Graph vorhanden! Bitte zuerst Upload durchführen.");
 
-            Button uploadButton = new Button("Zum Upload", e ->
-                    UI.getCurrent().navigate(UploadView.class));
+            H2 message = new H2("Kein Graph vorhanden! Bitte zuerst Upload durchführen.");
+
+            Button uploadButton = new Button("Zum Upload",
+                    e -> UI.getCurrent().navigate(UploadView.class));
 
             HorizontalLayout header = new HorizontalLayout(message, uploadButton);
             header.setDefaultVerticalComponentAlignment(Alignment.CENTER);
+
             add(header);
             return;
         }
 
         matrix = graphModel.toMatrixArray();
 
-        Div card = createCard();
-        Div graph = createGraphContainer();
+        // ================= LEFT CARD =================
+        Div tableCard = createTableCard();   // ⭐ FIX
 
+        // ================= GRAPH + PATH CARD =================
+        graphContainer = createGraphContainer();
+        Div pathCard = createPathCard();     // ⭐ FIX
 
-        card.setWidth("320px");
-        card.getStyle().set("flex-shrink", "0");
+        graphContainer.setHeight("400px");
+        graphContainer.setWidth("80%");
+        pathCard.setWidth("100%");
 
-        HorizontalLayout layout = new HorizontalLayout(card, graph);
+        // LEFT COLUMN
+        VerticalLayout leftSide = new VerticalLayout(tableCard);
+        leftSide.setWidth("400px");
+        leftSide.setPadding(false);
+        leftSide.setSpacing(true);
+
+        // RIGHT COLUMN
+        VerticalLayout rightSide = new VerticalLayout(graphContainer, pathCard);
+        rightSide.setSizeFull();
+        rightSide.setPadding(false);
+        rightSide.setSpacing(true);
+        rightSide.setWidthFull();
+
+        HorizontalLayout layout = new HorizontalLayout(leftSide, rightSide);
         layout.setSizeFull();
-
         layout.setAlignItems(Alignment.START);
-
-        layout.setFlexGrow(1, graph);
-        layout.setFlexGrow(0, card);
+        layout.setFlexGrow(0, leftSide);
+        layout.setFlexGrow(1, rightSide);
 
         add(layout);
 
-        getElement().executeJs("""
-            setTimeout(() => $0.$server.initGraphClientSide(), 100);
-        """, getElement());
+        getElement().executeJs(
+                "setTimeout(() => $0.$server.initGraphClientSide(), 100);",
+                getElement()
+        );
     }
 
+    // =====================================================
+    // LEFT CARD (TABELLE)
+    // =====================================================
+    private Div createTableCard() {
+
+        Div card = new Div();
+
+        card.getStyle()
+                .set("padding", "16px")
+                .set("background", "#111")
+                .set("color", "white")
+                .set("border-radius", "12px");
+
+        tableContent = new Div();
+
+        card.add(
+                new H2("Dijkstra"),
+                new Div("👉 Knoten auswählen"),
+                tableContent
+        );
+
+        return card;
+    }
+
+    // =====================================================
+    // RIGHT BOTTOM CARD (PFADE)
+    // =====================================================
+    private Div createPathCard() {
+
+        Div card = new Div();
+
+        card.getStyle()
+                .set("padding", "16px")
+                .set("background", "#111")
+                .set("color", "white")
+                .set("border-radius", "12px")
+                .set("display", "flex")
+                .set("flex-direction", "column")
+                .set("align-items", "center");
+
+        card.setWidth("100%");
+
+        pathContent = new Div();
+
+        card.add(
+                new H2("Alle kürzesten Pfade"),
+                pathContent
+        );
+
+        return card;
+    }
+
+    // =====================================================
+    // GRAPH INIT
+    // =====================================================
     @ClientCallable
     public void initGraphClientSide() {
-
-        Div graphContainer = (Div) getChildren()
-                .filter(c -> c instanceof HorizontalLayout)
-                .findFirst()
-                .get()
-                .getElement()
-                .getChild(1)
-                .getComponent()
-                .get();
 
         initGraph(graphContainer);
     }
 
-
-
-    // ================= GRAPH INIT =================
-
     private void initGraph(Div graphContainer) {
 
+        List<int[]> edgesList = GraphVisualAdapter.toEdges(matrix);
+
         String nodes = GraphDataMapper.buildNodes(matrix.length);
-        String edges = GraphDataMapper.buildEdges(matrix);
+
+        String edges;
+
+        try {
+            edges = new ObjectMapper().writeValueAsString(
+                    edgesList.stream()
+                            .map(e -> Map.of("from", e[0], "to", e[1]))
+                            .toList()
+            );
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
 
         UI.getCurrent().getPage().executeJs("""
-            if (!window.visLoaded) {
+            if (!window.visLoading) {
+                window.visLoading = true;
                 let script = document.createElement('script');
                 script.src = "https://unpkg.com/vis-network/standalone/umd/vis-network.min.js";
                 script.onload = () => window.visLoaded = true;
@@ -114,7 +197,7 @@ public class DijkstraView extends VerticalLayout {
 
             function start() {
 
-               if (!window.visLoaded || !window.vis || !window.vis.Network) return;
+                if (!window.visLoaded || !window.vis || !window.vis.Network) return;
                 if (window.network) return;
 
                 const rawNodes = JSON.parse($1);
@@ -138,9 +221,9 @@ public class DijkstraView extends VerticalLayout {
             }
 
             const interval = setInterval(() => {
-                 if (window.visLoaded && window.vis && window.vis.Network) {
-                     clearInterval(interval);
-                     setTimeout(start, 50);
+                if (window.visLoaded && window.vis && window.vis.Network) {
+                    clearInterval(interval);
+                    setTimeout(start, 80);
                 }
             }, 50);
         """,
@@ -150,8 +233,9 @@ public class DijkstraView extends VerticalLayout {
                 getElement());
     }
 
-    // ================= SERVER CALL =================
-
+    // =====================================================
+    // CLICK EVENT
+    // =====================================================
     @ClientCallable
     public void nodeSelected(int nodeId) {
 
@@ -160,31 +244,34 @@ public class DijkstraView extends VerticalLayout {
         DijkstraResult result = service.dijkstra(matrix, nodeId);
 
         getUI().ifPresent(ui ->
-                ui.access(() -> updateCard(result))
+                ui.access(() -> updateCards(result))
         );
     }
 
-    // ================= UI OUTPUT =================
+    // =====================================================
+    // UPDATE BOTH CARDS
+    // =====================================================
+    private void updateCards(DijkstraResult result) {
+        updateTable(result);
+        updatePaths(result);
+    }
 
-    private void updateCard(DijkstraResult result) {
+    // =====================================================
+    // LEFT TABLE
+    // =====================================================
+    private void updateTable(DijkstraResult result) {
 
-        if (content == null) return;
-
-        content.removeAll();
+        tableContent.removeAll();
 
         int[] dist = result.getDistances();
         int[] prev = result.getPrevious();
 
-        // ================= HEADER =================
         Div header = new Div();
-
         header.getStyle()
                 .set("display", "grid")
                 .set("grid-template-columns", "1fr 1fr 1fr")
-                .set("width", "100%")
-                .set("justify-items", "center")
-                .set("align-items", "center")
-                .set("font-weight", "bold");
+                .set("font-weight", "bold")
+                .set("column-gap", "20px") ;
 
         header.add(
                 new Div("Knoten"),
@@ -192,85 +279,66 @@ public class DijkstraView extends VerticalLayout {
                 new Div("Distanz")
         );
 
-        content.add(header);
+        tableContent.add(header);
 
-        // ================= TABLE ROWS =================
         for (int i = 0; i < dist.length; i++) {
 
-            String node = getLabel(i);
-
-            String predecessor = (prev[i] == -1)
-                    ? "–"
-                    : getLabel(prev[i]);
-
-            String distance = (dist[i] == Integer.MAX_VALUE)
-                    ? "∞"
-                    : String.valueOf(dist[i]);
-
             Div row = new Div();
-
             row.getStyle()
                     .set("display", "grid")
                     .set("grid-template-columns", "1fr 1fr 1fr")
                     .set("text-align", "center")
-                    .set("width", "100%")
-                    .set("font-family", "monospace")
-                    .set("padding", "2px 0");
+                    .set("font-family", "monospace");
 
             row.add(
-                    new Div(node),
-                    new Div(predecessor),
-                    new Div(distance)
+                    new Div(getLabel(i)),
+                    new Div(prev[i] == -1 ? "–" : getLabel(prev[i])),
+                    new Div(dist[i] == Integer.MAX_VALUE ? "∞" : String.valueOf(dist[i]))
             );
 
-            content.add(row);
+            tableContent.add(row);
         }
+    }
+
+    // =====================================================
+    // BOTTOM PATHS
+    // =====================================================
+    private void updatePaths(DijkstraResult result) {
+
+        pathContent.removeAll();
+
+        int[] dist = result.getDistances();
 
         Div start = new Div("Startknoten: " + getLabel(selectedNode));
-
         start.getStyle()
                 .set("text-align", "center")
                 .set("font-weight", "bold")
                 .set("font-size", "16px")
                 .set("margin-bottom", "12px")
+                .set("margin-top", "12px")
                 .set("color", "#00aaff");
 
-        content.add(start);
-
-        // ================= PATHS =================
-        content.add(new Div(" "));
-
-        Div title = new Div("Alle kürzesten Pfade vom Startknoten");
-        title.getStyle()
-                .set("text-align", "center")
-                .set("font-weight", "bold")
-                .set("margin-top", "10px");
-
-        content.add(title);
-
-        content.add(new Div(" "));
+        pathContent.add(start);
 
         for (int i = 0; i < dist.length; i++) {
 
             String path = buildPath(result, i);
 
-            String distance = (dist[i] == Integer.MAX_VALUE)
-                    ? "∞"
-                    : String.valueOf(dist[i]);
-
-            Div pathRow = new Div(getLabel(i) + ": " + path + "   (Distanz: " + distance + ")");
-
-            pathRow.getStyle()
-                    .set("text-align", "center")
-                    .set("width", "100%")
-                    .set("font-family", "monospace");
-
-            content.add(pathRow);
+            pathContent.add(
+                    new Div(
+                            getLabel(i) + ": " +
+                                    path +
+                                    " (Distanz: " +
+                                    (dist[i] == Integer.MAX_VALUE ? "∞" : dist[i]) +
+                                    ")"
+                    )
+            );
         }
     }
 
-    // ================= PATH =================
-
+    // =====================================================
+    // PATH BUILDER
+    // =====================================================
     private String buildPath(DijkstraResult result, int target) {
 
         List<Integer> path = result.getPathTo(target);
@@ -278,52 +346,27 @@ public class DijkstraView extends VerticalLayout {
         StringBuilder sb = new StringBuilder();
 
         for (int i = 0; i < path.size(); i++) {
-
-            if (i > 0) {
-                sb.append(" → ");
-            }
-
+            if (i > 0) sb.append(" → ");
             sb.append(getLabel(path.get(i)));
         }
 
         return sb.toString();
     }
 
-    // ================= UI HELPERS =================
-
-    private Div createCard() {
-
-        Div card = new Div();
-
-        card.getStyle()
-                .set("width", "100%")
-                .set("padding", "16px")
-                .set("background", "#111")
-                .set("color", "white")
-                .set("border-radius", "12px");
-
-        content = new Div();
-
-        card.add(
-                new H2("Dijkstra"),
-                new Div("👉 Knoten auswählen"),
-                content
-        );
-
-        return card;
-    }
-
+    // =====================================================
+    // GRAPH
+    // =====================================================
     private Div createGraphContainer() {
-
         Div graph = new Div();
         graph.setWidth("100%");
         graph.setHeight("500px");
-
         graph.getStyle().set("border", "1px solid #ccc");
-
         return graph;
     }
 
+    // =====================================================
+    // LABEL
+    // =====================================================
     private String getLabel(int i) {
 
         StringBuilder sb = new StringBuilder();
