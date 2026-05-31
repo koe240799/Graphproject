@@ -6,6 +6,7 @@ import at.spengergasse.views.upload.UploadView;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -50,7 +51,7 @@ public class EulerView extends VerticalLayout {
 
         int[][] matrix = graphModel.toMatrixArray();
 
-        add(new H2("Eulersche Linien & Zyklen"));
+        add(new H1("Eulersche Linien & Zyklen"));
 
         Div container = new Div();
         container.getStyle()

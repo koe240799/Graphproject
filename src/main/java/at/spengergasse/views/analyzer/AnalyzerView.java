@@ -195,7 +195,8 @@ public class AnalyzerView extends VerticalLayout {
                 .set("text-align", "center")
                 .set("font-weight", "bold")
                 .set("border-bottom", "1px solid gray")
-                .set("padding", "6px");
+                .set("padding", "6px")
+                .set("column-gap", "20px");
 
         headerRow.add(
                 new Span("Knoten"),
@@ -237,7 +238,6 @@ public class AnalyzerView extends VerticalLayout {
                 .set("padding", "20px")
                 .set("border-radius", "12px")
                 .set("box-shadow", "0 2px 10px rgba(0,0,0,0.15)")
-                .set("width", "100%")
                 .set("background-color", "black")
                 .set("color", "white")
                 .set("text-align", "center")

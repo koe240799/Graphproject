@@ -289,7 +289,6 @@ public class BFSView extends VerticalLayout {
         Div graph = new Div();
         graph.setWidth("100%");
         graph.setHeight("500px");
-        graph.getStyle().set("border", "1px solid #ccc");
 
         return graph;
     }
@@ -304,7 +303,7 @@ public class BFSView extends VerticalLayout {
 
         return nodes.stream()
                 .map(this::getLabel)
-                .reduce((a, b) -> a + " · " + b)
+                .reduce((a, b) -> a + " , " + b)
                 .orElse("-");
     }
 

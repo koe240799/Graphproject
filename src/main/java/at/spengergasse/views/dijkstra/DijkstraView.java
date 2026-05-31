@@ -72,9 +72,11 @@ public class DijkstraView extends VerticalLayout {
         graphContainer = createGraphContainer();
         Div pathCard = createPathCard();     // ⭐ FIX
 
-        graphContainer.setHeight("400px");
-        graphContainer.setWidth("80%");
-        pathCard.setWidth("100%");
+        graphContainer.setHeight("450px");
+        graphContainer.setWidth("100%");
+
+        pathCard.setWidth("80%");
+
 
         // LEFT COLUMN
         VerticalLayout leftSide = new VerticalLayout(tableCard);
@@ -211,6 +213,8 @@ public class DijkstraView extends VerticalLayout {
                 }, {
                     physics: true
                 });
+                
+                window.network.fit();
 
                 window.network.on("click", (params) => {
                     if (params.nodes.length > 0) {
@@ -359,8 +363,7 @@ public class DijkstraView extends VerticalLayout {
     private Div createGraphContainer() {
         Div graph = new Div();
         graph.setWidth("100%");
-        graph.setHeight("500px");
-        graph.getStyle().set("border", "1px solid #ccc");
+        graph.setHeight("450px");
         return graph;
     }
 

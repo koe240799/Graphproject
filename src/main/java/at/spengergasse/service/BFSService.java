@@ -94,7 +94,7 @@ public class BFSService {
             }
         }
 
-        return String.join(" · ", result);
+        return String.join(" , ", result);
     }
 
 }
