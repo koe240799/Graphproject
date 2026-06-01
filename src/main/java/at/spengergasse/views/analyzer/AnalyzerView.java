@@ -24,6 +24,7 @@ import java.util.List;
 @Route("analyzer")
 @Menu(order = 1, icon = LineAwesomeIconUrl.CALCULATOR_SOLID)
 public class AnalyzerView extends VerticalLayout {
+//    Einbindung Service für die Berechnungen
     private final AnalyzerService service = new AnalyzerService();
 
     public AnalyzerView() {
@@ -31,8 +32,10 @@ public class AnalyzerView extends VerticalLayout {
         setAlignItems(Alignment.CENTER);
         setJustifyContentMode(JustifyContentMode.START);
 
+//        Den gespeicherten Graphen aus der Session holen (von Upload)
         Graph graph = (Graph) VaadinSession.getCurrent().getAttribute("graph");
 
+//        Wenn noch kein Graph in der Session ist  -> Fehlermeldung und Button zu UploadView
         if (graph == null) {
             H2 message = new H2(" Kein Graph vorhanden! Bitte zuerst Upload durchführen.");
 
@@ -43,15 +46,14 @@ public class AnalyzerView extends VerticalLayout {
             HorizontalLayout header = new HorizontalLayout(message, uploadButton);
             header.setDefaultVerticalComponentAlignment(Alignment.CENTER);
             add(header);
-            return;
+            return; // Abbruch wenn keine Daten vorhanden sind
         }
 
 
-//        Graph in eine Matrix umwandeln
+//        Graph in Adjazenzmatrix umwandeln
         int[][] matrix = graph.toMatrixArray();
 
-//        Berechnungen aus der AnalyzerService Klasse übernehmen
-//        kürzesten Wege:
+//       Floyd-Warshall -> kürzeste Wege
         int[][] dist = service.floydWarshall(matrix);
 
 //        Exzentritität
@@ -69,6 +71,7 @@ public class AnalyzerView extends VerticalLayout {
         add(new H1("Graph Analyse Ergebnisse"));
 
 
+//        Ausgabe der Daten in form von Cards
         HorizontalLayout cards = new HorizontalLayout(
                 createExcentricityCard("Exzentrizität", ext),
                 createCard("Radius", radius, ext),
@@ -117,7 +120,7 @@ public class AnalyzerView extends VerticalLayout {
                 .set("border-radius", "8px")
                 .set("overflow", "hidden");
 
-        // Header
+        // Tabellen überschriften
         Div h1 = new Div(new Text("Knoten"));
         Div h2 = new Div(new Text("Exzentrizität"));
 
@@ -126,7 +129,7 @@ public class AnalyzerView extends VerticalLayout {
 
         table.add(h1, h2);
 
-        // Rows
+        // für jeden Knoten eine Zeile
         for (int i = 0; i < ext.length; i++) {
 
             Div c1 = new Div(getNodeLabel(i));
@@ -158,7 +161,7 @@ public class AnalyzerView extends VerticalLayout {
         return card;
     }
 
-
+//    nur Exzentrizität bekommt eine eigene Card, andere Ausgabe als der Rest
     private Component createCard(String title, int value, int[] ext) {
 
         Div card = new Div();
@@ -231,6 +234,7 @@ public class AnalyzerView extends VerticalLayout {
         return card;
     }
 
+
     private Component createCenterCard(String title, List<Integer> center, int[] ext) {
 
         Div card = new Div();
@@ -248,7 +252,7 @@ public class AnalyzerView extends VerticalLayout {
 
         H3 h3 = new H3(title);
 
-        // 🔹 Zentrum schön als Text anzeigen (ohne [])
+        // Zentrum schön als Text anzeigen (ohne [])
         String centerText = "Werte";
 
         Span span = new Span(centerText);
@@ -261,7 +265,7 @@ public class AnalyzerView extends VerticalLayout {
         Div details = new Div();
         details.setVisible(false);
 
-        // 🔹 Wrapper für sauberes Layout (WICHTIG!)
+        // Wrapper für sauberes Layout
         VerticalLayout content = new VerticalLayout();
         content.setAlignItems(Alignment.CENTER);
         content.setSpacing(true);
@@ -283,7 +287,7 @@ public class AnalyzerView extends VerticalLayout {
 
         details.add(headerRow);
 
-        // Tabelle mit ✔ für Zentrum
+        // Tabelle mit ✔ für Zentrum (Markierung der Werte)
         for (int i = 0; i < ext.length; i++) {
 
             Div row = new Div();
@@ -342,6 +346,7 @@ public class AnalyzerView extends VerticalLayout {
                 .set("border-top", "1px solid #444");
     }
 
+//    Methode um knoten einen Buchstaben zuzuweisen zur einfachen Lesbarkeit(A, B, C)
     private String getNodeLabel(int i) {
         StringBuilder sb = new StringBuilder();
         while (i >= 0) {

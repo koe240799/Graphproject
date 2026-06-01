@@ -1,0 +1,20 @@
+Ablauf Analyzer
+
+Ohne Upload funktioniert Analyzer nicht, da er die Daten von der Session
+die in Upload gespeichert ist abruft
+
+Analyzer View
+    * holt den Graph aus der Session
+    * fordert Ergebnisse aus AnalyzerService an
+        - hier werden keine Berechnungen durchgeführt sondern nur abgefragt
+    * UI erstellen (Cards, Tabellen, Buttons)
+
+AnalyzerService
+    * ist die Rechenmaschiene
+        - Floyd-Warshall -> übergabe der Daten an Exzentrizität erfolgt auf AnalyzerView (dist)
+        - Exzentrizität
+        - Radius
+        - Durchmesser
+        - Zentrum
+    * Ergebnis wird an AnalyzerView wieder zurückgegeben
+

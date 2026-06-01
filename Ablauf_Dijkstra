@@ -1,0 +1,24 @@
+Ablauf von Dijkstra
+
+DijkstraView
+    * Graph wird von Session geladen (Upload)
+    * Benutzer muss auf Knoten klicken
+    * DijkstraService wird aufgerufen
+
+DijkstraService
+    * der kürzeste Pfad wird berechnet
+    * dist[] wird erstellt (kürzester Weg)
+    * prev[] wird gespeichert (Vorgänger Knoten)
+    * DijkstraResult wird aufgerufen
+
+DijkstraResult
+    * nur ein Container
+        - speichert:
+            # kürzeste Wege
+            # Pfadstruktur
+            # Startknoten
+        - baut Pfad wieder zusammen
+    * GraphDataMapper wird aufgerufen
+
+GraphDataMapper
+    * Umwandlung von Java in JSON für vis.js

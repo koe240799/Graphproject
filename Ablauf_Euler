@@ -1,0 +1,17 @@
+Ablauf EulerView
+
+EulerView / Steuerzentrale
+    * lädt Graph aus Session
+    * ruft Sessoin auf
+    * entscheidet was angezeigt wird
+
+EulerService /Logik
+    * analyziert Graph
+    * berechnet Eulerweg oder Zyklus
+
+EulerConcept
+    * Beschreibt die Theorie
+    * gibt sie aus
+
+EulerDataUtil
+    * enthält die Theorie die von der Concept Klasse abgerufen wird

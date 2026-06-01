@@ -3,6 +3,7 @@ package at.spengergasse.util;
 import at.spengergasse.model.EulerConcept;
 import java.util.List;
 
+//Theoretische Erklärungen die von EulerConcept abgerufen werden können
 public class EulerDataUtil {
 
     public static List<EulerConcept> getConcepts() {

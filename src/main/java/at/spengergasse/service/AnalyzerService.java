@@ -9,11 +9,13 @@ public class AnalyzerService {
     //    Knoten die ich nicht erreichen kann "infinite"
     public static final int INF = 999999;
 
-    //    Berechnung der kürzesten Wege aller Knoten nach Floyd Warshall
+    //    Berechnung der kürzesten Wege zwischen Knotenpaaren nach Floyd Warshall
     public int[][] floydWarshall(int[][] graph) {
-        int n = graph.length;
-        int[][] dist = new int[n][n];
 
+        int n = graph.length; //Knotenanzahl
+        int[][] dist = new int[n][n]; //Distanzmatrix
+
+//        Initialisierung Distanzmatrix
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
 
@@ -29,10 +31,16 @@ public class AnalyzerService {
                 }
             }
         }
-        for (int k = 0; k < n; k++) {
-            for (int i = 0; i < n; i++) {
-                for (int j = 0; j < n; j++) {
+//        Hier werden 3 Schleifen durchlaufen
+        for (int k = 0; k < n; k++) { //Zwischenknoten
+            for (int i = 0; i < n; i++) { //Startknoten
+                for (int j = 0; j < n; j++) { // Zielknoten
+
+//                    Ziel: ist der kürzeste weg i -> j , oder ist er kürzer wenn ich über
+//                            den Zwischenknoten k gehe i -> k -> j
+
                     if (dist[i][k] + dist[k][j] < dist[i][j]) {
+//                        Überschreibung des alten Weges
                         dist[i][j] = dist[i][k] + dist[k][j];
                     }
                 }
@@ -42,24 +50,25 @@ public class AnalyzerService {
 
     }
 
-//    Exzentrizität
+//    Exzentrizität -> größte Distanz zu einem anderen erreichbaren Knoten
 
     public int[] excentricity(int[][] dist) {
 
-        int n = dist.length;
-        int[] ext = new int[n];
+        int n = dist.length; // Anzahl der Knoten im Graphen
+        int[] ext = new int[n]; // Ergebnis Array
 
         for (int i = 0; i < n; i++) {
-            int max = 0;
+            int max = 0; // größte Distanz für Knoten i
 
             for (int j = 0; j < n; j++) {
 
+//                nur erreichbare Knoten berückstichtigen
                 if (dist[i][j] != INF) {
                     max = Math.max(max, dist[i][j]);
                 }
             }
 
-            ext[i] = max;
+            ext[i] = max; // Exzentrizität speichern
         }
 
         return ext;
@@ -67,10 +76,11 @@ public class AnalyzerService {
 
     //    Radius / kleinste Exzentrizität
     public int radius(int[] ext) {
-        int min = ext[0];
+        int min = ext[0]; //Startwert
 
         for (int i = 0; i < ext.length; i++) {
-            if (ext[i] < min) min = ext[i];
+//            Math.min = Vergleich von zwei werden, min ist der kleine bekannte Wert
+//                    wird ext[i] ist der aktuelle Wert
             min = Math.min(min, ext[i]);
         }
         return min;
@@ -89,13 +99,15 @@ public class AnalyzerService {
 
     public List<Integer> center(int[] ext) {
 
+        // ich greife auf die Methode radius zu und hole mir das Ergebnis
         int rad = radius(ext);
 
+//        Alle Knoten die zum Zentrum gehören werden hier gespeichert
         List<Integer> center = new ArrayList<>();
 
-        // 👉 über ALLE Knoten iterieren
+        // über ALLE Knoten iterieren
         for (int i = 0; i < ext.length; i++) {
-
+//            Wenn die Exzentrizität der Knoten dem Radius entspricht, dann ist er "zentral"
             if (ext[i] == rad) {
                 center.add(i);
             }

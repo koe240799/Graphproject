@@ -1,0 +1,26 @@
+Ablauf von Upload:
+
+Upload View
+	* Benutzer lädt eine CSV-Datei hoch
+	 -> GraphService.load() wird aufgerufen
+
+GraphService (Verarbeitung)
+	* liest datei Zeile für Zeile ein
+	* wandelt sie in eine Matrix um
+	* GraphValidation.validate() wird aufgefufen
+
+GraphValidation (Prüfung)
+	* ist Matrix leer
+	* ist Matrix quadratisch
+	* enthält Matrix null oder negativ Werte
+	* Bei einem Fehler wird eine Exception ausgeworfen
+	* bei Erfolg  --> zurück zu GraphService
+
+Graph(Datenmodell)
+	* Daten werden gespeichert in
+	* die Matrix und die Labels (A,B,C...)
+	* wird von GraphService erstellt
+
+Zurück zur UploadView
+	* bekommt den fertigen Graphen
+	* Graph wird im Grid angezeigt und in der Session gespeichert

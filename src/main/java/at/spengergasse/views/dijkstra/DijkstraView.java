@@ -29,6 +29,7 @@ import java.util.Map;
 @Menu(order = 2, icon = LineAwesomeIconUrl.BOLT_SOLID)
 public class DijkstraView extends VerticalLayout {
 
+//    Service für Alogrithmus -> Logik-Schicht
     private final DijkstraService service = new DijkstraService();
     private int[][] matrix;
 
@@ -46,9 +47,10 @@ public class DijkstraView extends VerticalLayout {
 
         setSizeFull();
 
-
+//        Graph aus der Session von Upload laden
         Graph graphModel = (Graph) VaadinSession.getCurrent().getAttribute("graph");
 
+//        Wenn noch kein Graph geladen ist Fehlermeldung -> Abbruch
         if (graphModel == null) {
 
             H2 message = new H2("Kein Graph vorhanden! Bitte zuerst Upload durchführen.");
@@ -158,7 +160,7 @@ public class DijkstraView extends VerticalLayout {
     }
 
     // =====================================================
-    // GRAPH INIT
+    // GRAPH INITIALISIERUNG (JavaScript + vis.js)
     // =====================================================
     @ClientCallable
     public void initGraphClientSide() {
@@ -168,22 +170,28 @@ public class DijkstraView extends VerticalLayout {
 
     private void initGraph(Div graphContainer) {
 
+//        Kanten aus Matrix erzeugen
         List<int[]> edgesList = GraphVisualAdapter.toEdges(matrix);
 
+//        Knoten erzeugen
         String nodes = GraphDataMapper.buildNodes(matrix.length);
 
+//        Kanten in JSON umwandeln
         String edges;
 
         try {
             edges = new ObjectMapper().writeValueAsString(
                     edgesList.stream()
+                            // jede Kante wird in eine Map umgewandelt
+                            // e[0] = Startknoten, e[1] = Zielknoten
+                            // Das Ergebnis = {"form": 0, "to": 1}
                             .map(e -> Map.of("from", e[0], "to", e[1]))
-                            .toList()
+                            .toList() //Stream wird wieder zur Liste
             );
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-
+//        vis.js Library laden
         UI.getCurrent().getPage().executeJs("""
             if (!window.visLoading) {
                 window.visLoading = true;
@@ -194,6 +202,7 @@ public class DijkstraView extends VerticalLayout {
             }
         """);
 
+        // Graph erstellen mit einem Click Listener
         UI.getCurrent().getPage().executeJs("""
             const container = $0;
 
@@ -216,6 +225,7 @@ public class DijkstraView extends VerticalLayout {
                 
                 window.network.fit();
 
+                // Klick auf einen Knoten, Java Backend informieren (click Listener)
                 window.network.on("click", (params) => {
                     if (params.nodes.length > 0) {
                         const id = params.nodes[0];
@@ -238,7 +248,8 @@ public class DijkstraView extends VerticalLayout {
     }
 
     // =====================================================
-    // CLICK EVENT
+    // CLICK EVENT / Java -> Backend
+    // @ClientCallable erlaubt JavaScript Methoden im Backend auszulösen sonst nicht möglich
     // =====================================================
     @ClientCallable
     public void nodeSelected(int nodeId) {

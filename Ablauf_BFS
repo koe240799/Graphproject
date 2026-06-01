@@ -1,0 +1,26 @@
+Ablauf BFS
+
+BFSView / zeigen
+    * zeigt den Graphen (vis.js)
+    * reagiert auf Klicks
+    * zeigt BFS-Ereignisse als Tabelle
+
+BFSService / berechnen
+    * Führt die Berechnung durch
+    * bereitet die Queue vor
+    * trackt Steps
+    * entscheidet welcher Knoten wann besucht wird, welche Nachbarn entdeckt werden und BFS Struktur
+
+BFSResult / Ergebnisse speichern
+    * ist ein Container, keine Logik, keine Berechnung, nur Daten
+        - enthält
+         # kürzeste Wege
+         # BFS-Baum
+         # Verlauf der Berechnung
+
+BFSStep / dokumentieren
+    * Vergibt Schrittnummern
+    * neu gefunde Knoten
+    * abgearbeitete Knoten
+    * Infos für UI
+

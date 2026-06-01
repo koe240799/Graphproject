@@ -2,13 +2,20 @@ package at.spengergasse.service;
 
 import java.util.List;
 
+//BFSStep beschreibt jeden einzelnen Schritt der BFS-Ausführung für Visualisierung
+//Jeder Step entspricht einer BFS_Ebene (Level-By_Level)
 public class BFSStep {
 
+//    laufende Nummer 1, 2 3
     private final int step;
+//    Knoten die in diesem Schritt entdeckt wurden
     private final List<Integer> discovered;
+//    Knoten, die in diesem Schritt verarbeitet wurden
     private final List<Integer> processed;
+//    String-Darstellung von Abhängigkeiten
     private final String dependencies;
 
+//    Wird wieder von BFSService befüllt
     public BFSStep(int step,
                    List<Integer> discovered,
                    List<Integer> processed,

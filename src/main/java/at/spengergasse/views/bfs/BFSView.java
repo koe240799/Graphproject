@@ -19,6 +19,7 @@ import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinSession;
+import org.hibernate.graph.spi.GraphParserEntityClassResolver;
 import org.vaadin.lineawesome.LineAwesomeIconUrl;
 import tools.jackson.databind.ObjectMapper;
 
@@ -30,10 +31,13 @@ import java.util.Map;
 @Menu(order = 2, icon = LineAwesomeIconUrl.BOLT_SOLID)
 public class BFSView extends VerticalLayout {
 
+    //Service für BFS Berechnung
     private final BFSService service = new BFSService();
     private int[][] matrix;
 
     private Div content;
+
+//    gewählter Startknoten
     private int startNode = -1;
 
     public BFSView() {
@@ -43,8 +47,10 @@ public class BFSView extends VerticalLayout {
 
         setSizeFull();
 
+//        Graph wird aus der Session geladen (Upload)
         Graph graphModel = (Graph) VaadinSession.getCurrent().getAttribute("graph");
 
+//        falls kein Graph vorhanden dann Fehlermeldung
         if (graphModel == null) {
 
             H2 message = new H2("Kein Graph vorhanden! Bitte zuerst Upload durchführen.");
@@ -59,6 +65,7 @@ public class BFSView extends VerticalLayout {
             return;
         }
 
+//        Umwandlung des Graphen in eine Ajazenzmatrix
         matrix = graphModel.toMatrixArray();
 
         Div card = createCard();
@@ -75,14 +82,18 @@ public class BFSView extends VerticalLayout {
 
         add(layout);
 
+//        JS Aufruf nach kurzer Verzögerung  -> Wichtig für die Visualisierung des Graphen
+//        benötigt mehr Zeit
         getElement().executeJs("""
             setTimeout(() => $0.$server.initGraphClientSide(), 100);
         """, getElement());
     }
 
+//    Wird von Client JS oder initial ausgelöst
     @ClientCallable
     public void initGraphClientSide() {
 
+//        holt den Graph-Container aus dem Layaout
         Div graphContainer = (Div) getChildren()
                 .filter(c -> c instanceof HorizontalLayout)
                 .findFirst()
@@ -92,6 +103,7 @@ public class BFSView extends VerticalLayout {
                 .getComponent()
                 .get();
 
+//        initialisiert vis.js Graph im Container
         initGraph(graphContainer);
     }
 
@@ -99,8 +111,10 @@ public class BFSView extends VerticalLayout {
 
     private void initGraph(Div graphContainer) {
 
+//            Kanten aus Adjazenzmatrix erzeugen
             List<int[]> edgesList = GraphVisualAdapter.toEdges(matrix);
 
+//            Knoten als JSON String erzeugen / ablauf wie bei Dijkstra
             String nodes = GraphDataMapper.buildNodes(matrix.length);
 
             String edges;
@@ -174,16 +188,19 @@ public class BFSView extends VerticalLayout {
     @ClientCallable
     public void nodeSelected(int nodeId) {
 
+//        Startknoten merken
         startNode = nodeId;
 
+//        Berechnung im BFSservice durchführen
         BFSResult result = service.bfs(matrix, nodeId);
 
+//        Aktualisieren
         getUI().ifPresent(ui ->
                 ui.access(() -> updateCard(result))
         );
     }
 
-    // ================= OUTPUT (Dijkstra Style) =================
+    // ================= OUTPUT  =================
 
     private void updateCard(BFSResult result) {
 
@@ -233,6 +250,7 @@ public class BFSView extends VerticalLayout {
 
         content.add(header);
         // ================= ROWS =================
+//        jeden BFS-Step als Zeile darstellen
         for (BFSStep step : result.getSteps()) {
 
             Div row = new Div();
@@ -294,6 +312,7 @@ public class BFSView extends VerticalLayout {
     }
 
     // ================= HELPERS =================
+//    Formatierung der Knotenmengen 0,1,2 -> "A, B, C"
 
     private String format(java.util.List<Integer> nodes) {
 

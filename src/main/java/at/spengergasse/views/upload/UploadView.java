@@ -23,7 +23,10 @@ import java.util.List;
 @Route("")
 @Menu(order = 0, icon = LineAwesomeIconUrl.UPLOAD_SOLID)
 public class UploadView extends VerticalLayout {
+//    Grid um Matrix anzuzeigen / jede Zeile ist eine Liste von Strings
     private final Grid<List<String>> grid = new Grid<>();
+
+//    Anwendung der Serviceklasse zum Einlesen und Verarbeiten der Datei
     private final GraphService service = new GraphService();
 
     public UploadView() {
@@ -39,21 +42,24 @@ public class UploadView extends VerticalLayout {
             container.setHeight("80%");
             container.add(grid);
 
-
+//            FB speichert die hochgeladene Datei, Upload wählt die Datei aus
             FileBuffer buffer = new FileBuffer();
             Upload upload = new Upload(buffer);
 
+//            es werden nur csv Datein angenommen
             upload.setAcceptedFileTypes(".csv");
 
-
+//            EVENT: wird nur ausgelöst, wenn der Upload erfolgreich war
             upload.addSucceededListener(event -> {
                 try {
                     InputStream inputStream = buffer.getInputStream();
-
+//                    Einlesen der Datei
                     Graph graph = service.load(inputStream);
+//                    Anzeige des Graphen
                     showGraph(graph);
 
-//                    Speicherung des Graphen in HTTP-Session des Browsers
+//                    Graph wird in der Session gespeichert auf Serverseite
+//                    ist mehrfach abrufbar für andere Views
                     VaadinSession.getCurrent().setAttribute("graph", graph);
 
 
@@ -64,6 +70,7 @@ public class UploadView extends VerticalLayout {
                 }
             });
 
+//            Wenn Datei entfernt wird, wird der Grid wieder zurückgesetzt
             upload.addFileRemovedListener(e -> {
                 resetView();
                 Notification.show("Ansicht neu geladen!");
@@ -72,47 +79,56 @@ public class UploadView extends VerticalLayout {
             add(upload, container);
         }
 
+//        Methode setzt die Anzeige wieder zurück (Ergebnis leere Liste)
         private void resetView() {
             grid.removeAllColumns();
             grid.setItems(List.of());
         }
 
 
-        // 🔥 BLOCKER + VIEW LOGIC
+//        Methode zeigt Graphen im Grid als Tabelle an
         private void showGraph(Graph graph) {
 
+//            Alle Spalten werden entfernt
             grid.removeAllColumns();
 
+//            Matrix und Labels aus Graph (model) holen
             List<List<Integer>> matrix = graph.getMatrix();
             List<String> labels = graph.getLabels();
 
+//            Wenn Matrix leer ist, keine Anzeige
             if (matrix.isEmpty()) {
                 grid.setItems(List.of());
                 return;
             }
 
             int n = matrix.size();
-
+//            Tabellenaufbau
             grid.addColumn(row -> row.get(0))
-                    .setHeader("#")
+                    .setHeader("#") //Erste Spalte #
                     .setWidth("30px")
                     .setFlexGrow(0);
 
+//            Schleife: jede Spalte zeig den Wert aus der Zeile
             for (int i = 0; i < n; i++) {
                 final int col = i;
                 grid.addColumn(row -> row.get(col + 1))
                         .setHeader(labels.get(i));
             }
 
+//            Vorbereitung der Daten für das Grid (Ausgabe)
             List<List<String>> rows = new ArrayList<>();
             for (int i = 0; i < n; i++) {
                 List<String> row = new ArrayList<>();
+//                Zuweisung der Spaltennamen je Element (A....., B.....)
                 row.add(labels.get(i));
                 for (int j = 0; j < n; j++) {
-                    row.add(String.valueOf(matrix.get(i).get(j)));
+                    row.add(String.valueOf(matrix.get(i).get(j))); //Werte aus der Zeile
                 }
                 rows.add(row);
             }
+
+//            Daten ins grid setzen, Ausgabe automatisch
             grid.setItems(rows);
 
         }

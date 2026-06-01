@@ -23,6 +23,7 @@ import java.util.List;
 @Menu(order = 3, icon = LineAwesomeIconUrl.GRADUATION_CAP_SOLID)
 public class EulerView extends VerticalLayout {
 
+//    Service enthält die Logik für Analyse
     private final EulerService service = new EulerService();
 
     public EulerView() {
@@ -32,10 +33,10 @@ public class EulerView extends VerticalLayout {
         setJustifyContentMode(JustifyContentMode.START);
 
 
-        // 🔥 Graph aus Upload holen (wie BFS)
+        // Graph aus Upload holen
         Graph graphModel = (Graph) VaadinSession.getCurrent().getAttribute("graph");
 
-        // ❌ Kein Graph vorhanden
+        // Fehlermeldung wenn kein Graph vorhanden ist
         if (graphModel == null) {
 
             H2 message = new H2("Kein Graph vorhanden! Bitte zuerst Upload durchführen.");
@@ -49,6 +50,7 @@ public class EulerView extends VerticalLayout {
             return;
         }
 
+//        Erzeugung Adjazenzmatrix
         int[][] matrix = graphModel.toMatrixArray();
 
         add(new H1("Eulersche Linien & Zyklen"));
@@ -64,6 +66,7 @@ public class EulerView extends VerticalLayout {
                 .set("margin", "0 auto");
 
 
+//        Service entscheidet: cycle, path oder none
         String type = service.getEulerType(matrix);
 
         switch (type) {

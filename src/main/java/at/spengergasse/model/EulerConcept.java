@@ -1,5 +1,6 @@
 package at.spengergasse.model;
 
+//Einfache Beschreibung des Euler-Koonzepts für Ausgabe
 public class EulerConcept {
     private final String title;
     private final String description;
